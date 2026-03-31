@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY)!
-);
+import { getClientSupabase } from "@/lib/supabase-client";
 
 type Product = {
   product_id: number;
@@ -40,7 +35,7 @@ export default function PlaceOrderPage() {
       router.push("/select-customer");
       return;
     }
-    supabase
+    getClientSupabase()
       .from("products")
       .select("product_id, product_name, price")
       .order("product_name")
@@ -106,13 +101,21 @@ export default function PlaceOrderPage() {
     setError("");
 
     try {
+      const supabase = getClientSupabase();
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-          customer_id: customerId,
-          fulfilled: false,
-          order_timestamp: new Date().toISOString(),
-          total_value: orderTotal,
+          customer_id: Number(customerId),
+          fulfilled: 0,
+          order_datetime: new Date().toISOString(),
+          order_subtotal: orderTotal,
+          shipping_fee: 0,
+          tax_amount: 0,
+          order_total: orderTotal,
+          payment_method: "card",
+          device_type: "desktop",
+          ip_country: "US",
+          risk_score: 0,
         })
         .select("order_id")
         .single();
@@ -123,6 +126,8 @@ export default function PlaceOrderPage() {
         order_id: order.order_id,
         product_id: li.product_id,
         quantity: li.quantity,
+        unit_price: li.price,
+        line_total: li.price * li.quantity,
       }));
 
       const { error: itemsError } = await supabase

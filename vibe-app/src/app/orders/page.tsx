@@ -4,18 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY)!
-);
+import { getClientSupabase } from "@/lib/supabase-client";
 
 type Order = {
   order_id: number;
-  order_timestamp: string;
-  fulfilled: boolean | number;
-  total_value: number;
+  order_datetime: string;
+  fulfilled: number;
+  order_total: number;
 };
 
 function OrdersContent() {
@@ -32,11 +27,11 @@ function OrdersContent() {
       router.push("/select-customer");
       return;
     }
-    supabase
+    getClientSupabase()
       .from("orders")
-      .select("order_id, order_timestamp, fulfilled, total_value")
+      .select("order_id, order_datetime, fulfilled, order_total")
       .eq("customer_id", customerId)
-      .order("order_timestamp", { ascending: false })
+      .order("order_datetime", { ascending: false })
       .then(({ data, error }) => {
         if (error) setError(error.message);
         else setOrders(data || []);
@@ -88,7 +83,7 @@ function OrdersContent() {
                   </Link>
                 </td>
                 <td className="p-3">
-                  {new Date(o.order_timestamp).toLocaleDateString()}
+                  {new Date(o.order_datetime).toLocaleDateString()}
                 </td>
                 <td className="p-3">
                   <span
@@ -102,7 +97,7 @@ function OrdersContent() {
                   </span>
                 </td>
                 <td className="p-3 text-right">
-                  ${Number(o.total_value).toFixed(2)}
+                  ${Number(o.order_total).toFixed(2)}
                 </td>
               </tr>
             ))}

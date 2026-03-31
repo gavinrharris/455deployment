@@ -4,48 +4,15 @@ export const dynamic = "force-dynamic";
 
 type PriorityRow = {
   order_id: number;
-  order_timestamp: string;
-  total_value: number;
-  fulfilled: boolean | number;
-  customer_id: string;
+  order_datetime: string;
+  order_total: number;
+  fulfilled: number;
+  customer_id: number;
   customer_name: string;
   late_delivery_probability: number;
-  predicted_late_delivery: boolean | number;
+  predicted_late_delivery: number;
   prediction_timestamp: string;
 };
-
-// SQL to run in Supabase SQL Editor:
-//
-// CREATE OR REPLACE FUNCTION get_priority_queue()
-// RETURNS TABLE(
-//   order_id bigint,
-//   order_timestamp timestamptz,
-//   total_value numeric,
-//   fulfilled bigint,
-//   customer_id text,
-//   customer_name text,
-//   late_delivery_probability numeric,
-//   predicted_late_delivery bigint,
-//   prediction_timestamp timestamptz
-// )
-// LANGUAGE sql SECURITY DEFINER AS $$
-//   SELECT
-//     o.order_id,
-//     o.order_timestamp,
-//     o.total_value,
-//     o.fulfilled,
-//     c.customer_id,
-//     c.first_name || ' ' || c.last_name AS customer_name,
-//     p.late_delivery_probability,
-//     p.predicted_late_delivery,
-//     p.prediction_timestamp
-//   FROM orders o
-//   JOIN customers c ON c.customer_id = o.customer_id
-//   JOIN order_predictions p ON p.order_id = o.order_id
-//   WHERE o.fulfilled = 0
-//   ORDER BY p.late_delivery_probability DESC, o.order_timestamp ASC
-//   LIMIT 50;
-// $$;
 
 function getProbabilityColor(prob: number): string {
   if (prob > 0.7) return "bg-red-100";
@@ -108,10 +75,10 @@ export default async function PriorityQueuePage() {
                   <td className="p-3 font-mono">{row.order_id}</td>
                   <td className="p-3">{row.customer_name}</td>
                   <td className="p-3">
-                    {new Date(row.order_timestamp).toLocaleDateString()}
+                    {new Date(row.order_datetime).toLocaleDateString()}
                   </td>
                   <td className="p-3 text-right">
-                    ${Number(row.total_value).toFixed(2)}
+                    ${Number(row.order_total).toFixed(2)}
                   </td>
                   <td className="p-3 text-right font-semibold">
                     {(Number(row.late_delivery_probability) * 100).toFixed(1)}%
@@ -128,7 +95,9 @@ export default async function PriorityQueuePage() {
                     </span>
                   </td>
                   <td className="p-3">
-                    {new Date(row.prediction_timestamp).toLocaleDateString()}
+                    {row.prediction_timestamp
+                      ? new Date(row.prediction_timestamp).toLocaleDateString()
+                      : "—"}
                   </td>
                 </tr>
               ))}

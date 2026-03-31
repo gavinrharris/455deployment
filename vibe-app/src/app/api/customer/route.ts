@@ -7,10 +7,10 @@ export async function GET(request: NextRequest) {
 
   const { data } = await supabase
     .from("customers")
-    .select("first_name, last_name")
+    .select("full_name")
     .eq("customer_id", id)
     .single();
 
   if (!data) return NextResponse.json({ name: null });
-  return NextResponse.json({ name: `${data.first_name} ${data.last_name}` });
+  return NextResponse.json({ name: data.full_name });
 }

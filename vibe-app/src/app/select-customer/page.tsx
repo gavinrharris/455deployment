@@ -3,17 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY)!
-);
+import { getClientSupabase } from "@/lib/supabase-client";
 
 type Customer = {
-  customer_id: string;
-  first_name: string;
-  last_name: string;
+  customer_id: number;
+  full_name: string;
   email: string;
 };
 
@@ -24,10 +18,10 @@ export default function SelectCustomerPage() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase
+    getClientSupabase()
       .from("customers")
-      .select("customer_id, first_name, last_name, email")
-      .order("last_name")
+      .select("customer_id, full_name, email")
+      .order("full_name")
       .then(({ data, error }) => {
         if (error) setError(error.message);
         else setCustomers(data || []);
@@ -35,7 +29,7 @@ export default function SelectCustomerPage() {
   }, []);
 
   const filtered = customers.filter((c) =>
-    `${c.first_name} ${c.last_name} ${c.email}`
+    `${c.full_name} ${c.email}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -68,9 +62,7 @@ export default function SelectCustomerPage() {
             onClick={() => selectCustomer(c)}
             className="text-left p-3 bg-white border rounded hover:bg-indigo-50 transition"
           >
-            <span className="font-medium">
-              {c.first_name} {c.last_name}
-            </span>
+            <span className="font-medium">{c.full_name}</span>
             <span className="text-gray-500 ml-2 text-sm">{c.email}</span>
           </button>
         ))}

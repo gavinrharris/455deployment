@@ -13,14 +13,14 @@ export default async function DashboardPage() {
   const [customerRes, ordersRes] = await Promise.all([
     supabase
       .from("customers")
-      .select("first_name, last_name, email")
+      .select("full_name, email")
       .eq("customer_id", customerId)
       .single(),
     supabase
       .from("orders")
-      .select("order_id, order_timestamp, fulfilled, total_value")
+      .select("order_id, order_datetime, fulfilled, order_total")
       .eq("customer_id", customerId)
-      .order("order_timestamp", { ascending: false }),
+      .order("order_datetime", { ascending: false }),
   ]);
 
   if (customerRes.error || !customerRes.data) {
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   const orders = ordersRes.data || [];
   const totalOrders = orders.length;
   const totalSpend = orders.reduce(
-    (sum, o) => sum + (Number(o.total_value) || 0),
+    (sum, o) => sum + (Number(o.order_total) || 0),
     0
   );
   const recentOrders = orders.slice(0, 5);
@@ -51,9 +51,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white p-4 rounded shadow">
           <p className="text-sm text-gray-500">Customer</p>
-          <p className="font-semibold">
-            {customer.first_name} {customer.last_name}
-          </p>
+          <p className="font-semibold">{customer.full_name}</p>
           <p className="text-sm text-gray-500">{customer.email}</p>
         </div>
         <div className="bg-white p-4 rounded shadow">
@@ -91,7 +89,7 @@ export default async function DashboardPage() {
                   </Link>
                 </td>
                 <td className="p-3">
-                  {new Date(o.order_timestamp).toLocaleDateString()}
+                  {new Date(o.order_datetime).toLocaleDateString()}
                 </td>
                 <td className="p-3">
                   <span
@@ -105,7 +103,7 @@ export default async function DashboardPage() {
                   </span>
                 </td>
                 <td className="p-3 text-right">
-                  ${Number(o.total_value).toFixed(2)}
+                  ${Number(o.order_total).toFixed(2)}
                 </td>
               </tr>
             ))}

@@ -15,7 +15,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("order_id, order_timestamp, fulfilled, total_value, customer_id")
+    .select("order_id, order_datetime, fulfilled, order_total, customer_id")
     .eq("order_id", id)
     .single();
 
@@ -32,7 +32,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("quantity, product_id, products(product_name, price)")
+    .select("quantity, unit_price, line_total, product_id, products(product_name, price)")
     .eq("order_id", id);
 
   return (
@@ -46,12 +46,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
         <div className="bg-white p-4 rounded shadow">
           <p className="text-sm text-gray-500">Date</p>
           <p className="font-semibold">
-            {new Date(order.order_timestamp).toLocaleString()}
+            {new Date(order.order_datetime).toLocaleString()}
           </p>
         </div>
         <div className="bg-white p-4 rounded shadow">
           <p className="text-sm text-gray-500">Total</p>
-          <p className="font-semibold">${Number(order.total_value).toFixed(2)}</p>
+          <p className="font-semibold">${Number(order.order_total).toFixed(2)}</p>
         </div>
         <div className="bg-white p-4 rounded shadow">
           <p className="text-sm text-gray-500">Fulfilled</p>
@@ -81,15 +81,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<Para
           {(items || []).map((item: Record<string, unknown>, i: number) => {
             const product = item.products as { product_name: string; price: number } | null;
             const qty = Number(item.quantity);
-            const price = Number(product?.price || 0);
+            const unitPrice = Number(item.unit_price);
+            const lineTotal = Number(item.line_total);
             return (
               <tr key={i} className="border-t">
                 <td className="p-3">{product?.product_name || "Unknown"}</td>
-                <td className="p-3 text-right">${price.toFixed(2)}</td>
+                <td className="p-3 text-right">${unitPrice.toFixed(2)}</td>
                 <td className="p-3 text-right">{qty}</td>
-                <td className="p-3 text-right">
-                  ${(price * qty).toFixed(2)}
-                </td>
+                <td className="p-3 text-right">${lineTotal.toFixed(2)}</td>
               </tr>
             );
           })}
